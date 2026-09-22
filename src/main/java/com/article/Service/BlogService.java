@@ -11,23 +11,23 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 public interface BlogService {
-    ResponseEntity<List<BlogResponseDTO>> getAllBlogs();
+    List<BlogResponseDTO> getAllBlogs();
 
-    ResponseEntity<DetailedBlogResponseDTO> getBlogById(String blogId);
+    DetailedBlogResponseDTO getBlogById(String blogId);
     
-    ResponseEntity<Void> createBlog(BlogRequestDTO blogRequestDTO);
+    Void createBlog(BlogRequestDTO blogRequestDTO);
 
-    ResponseEntity<Void> updateBlog(String id, BlogRequestDTO blogRequestDTO);
+    Void updateBlog(String id, BlogRequestDTO blogRequestDTO);
 
-    ResponseEntity<Void> updateTitle(String id, String title);
+    Void updateTitle(String id, String title);
 
-    ResponseEntity<Void> updateImage(String id, MultipartFile image);
+    Void updateImage(String id, MultipartFile image);
 
-    ResponseEntity<Void> updateContent(String id, String content);
+    Void updateContent(String id, String content);
 
-    ResponseEntity<Void> deleteBlog(String blogId);
+    Void deleteBlog(String blogId);
 
-    ResponseEntity<List<BlogResponseDTO>> getMyBlog();
+    List<BlogResponseDTO> getMyBlog();
 
-    ResponseEntity<List<BlogResponseDTO>> getBlogByUsername(String username);
+    List<BlogResponseDTO> getBlogByUsername(String username);
 }

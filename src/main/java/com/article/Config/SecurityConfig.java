@@ -67,17 +67,17 @@ public class SecurityConfig {
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oAuth2LoginSuccessHandler)
                         .failureHandler((req, res, ex) -> {
-                            //res.sendRedirect(frontendUrl + "/login?error=" + ex.getMessage());
-                            res.setContentType("application/json");
-                            res.getWriter().write("{\"error\":\"" + ex.getMessage() + "\"}");
+                            res.sendRedirect(frontendUrl + "/login?error=" + ex.getMessage());
+                            //res.setContentType("application/json");
+                            //res.getWriter().write("{\"error\":\"" + ex.getMessage() + "\"}");
                         }))
                 .csrf(csrf->csrf.disable())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement(httpSecuritySessionManagementConfigurer -> httpSecuritySessionManagementConfigurer
-                          .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                          .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
                 //.formLogin(Customizer.withDefaults());
-                .httpBasic(Customizer.withDefaults());
+                //.httpBasic(Customizer.withDefaults());
         return httpSecurity.build();
     }
 }

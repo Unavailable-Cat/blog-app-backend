@@ -3,6 +3,9 @@ package com.article.Service.Implementations;
 import com.article.DTO.LoginRequest;
 import com.article.DTO.RegisterRequest;
 import com.article.DTO.UserResponseDTO;
+import com.article.Exceptions.NullPasswordException;
+import com.article.Exceptions.UserAlreadyExistsException;
+import com.article.Exceptions.UserNotFoundException;
 import com.article.Mapper.RegisterDTOToUserMapper;
 import com.article.Mapper.UserToUserResponseDTO;
 import com.article.Model.Authorizer;
@@ -17,7 +20,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -41,20 +43,21 @@ public class UserServiceImpl implements UserService {
 
 
     @Override
-    public ResponseEntity<String> registerUser(RegisterRequest registerRequest) {
+    public String registerUser(RegisterRequest registerRequest) {
         if(registerRequest.getPassword()==null){
-            return new ResponseEntity("Password is required", HttpStatusCode.valueOf(400));
+            throw new NullPasswordException("Password is Required");
         }
         User user;
         if(userRepository.existsByEmail(registerRequest.getEmail())) {
-            user=userRepository.findByEmail(registerRequest.getEmail());
+            user=userRepository.findByEmail(registerRequest.getEmail())
+                    .orElseThrow(() -> new UserNotFoundException("User not found"));
             if(user.getPassword()==null){
                 user.setPassword(registerRequest.getPassword());
                 user.setAuthorizer(Authorizer.INAPP);
                 userRepository.save(user);
             }
             else{
-                return new ResponseEntity("User already exists", HttpStatusCode.valueOf(409));
+                throw new UserAlreadyExistsException("User with username: "+registerRequest.getUsername()+" already exists");
             }
         }
         else{
@@ -62,15 +65,14 @@ public class UserServiceImpl implements UserService {
             userRepository.save(user);
         }
         return loginUser(new LoginRequest(user.getEmail(),registerRequest.getPassword()));
-        //return ResponseEntity.ok().build();
     }
 
     @Override
-    public ResponseEntity<String> loginUser(LoginRequest loginUserRequest) {
+    public String loginUser(LoginRequest loginUserRequest) {
         Authentication authentication = manager.authenticate(new UsernamePasswordAuthenticationToken(loginUserRequest.getEmail(), loginUserRequest.getPassword()));
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String token = jwtService.generateToken(authentication);
-        return ResponseEntity.ok(token);
+        return token;
     }
 
     @Override
@@ -89,72 +91,74 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public ResponseEntity<UserResponseDTO> getCurrentUserDetails() {
+    public UserResponseDTO getCurrentUserDetails() {
         Authentication authentication=getauthentication();
         if(authentication!=null && authentication.isAuthenticated() && !(authentication.getPrincipal().equals("anonymousUser"))){
-            return ResponseEntity.ok(UserToUserResponseDTO.mapUserToUserResponse(userRepository.findByEmail(authentication.getName())));
+            return UserToUserResponseDTO.mapUserToUserResponse(userRepository.findByEmail(authentication.getName()).get());
         }
-        return ResponseEntity.badRequest().build();
+        throw new UserNotFoundException("User not found");
     }
 
     @Override
-    public ResponseEntity<Void> updateUserDescription(String description) {
+    public Void updateUserDescription(String description) {
         Authentication authentication=getauthentication();
-        User user=userRepository.findByEmail(authentication.getName());
+        User user=userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
         user.setDescription(description);
         userRepository.save(user);
-        return ResponseEntity.ok().build();
+        return null;
     }
 
     @Override
-    public ResponseEntity<Void> updateUserUsername(String username) {
+    public Void updateUserUsername(String username) {
         if(userRepository.existsByUsername(username)) {
-            return new ResponseEntity("Username already exists", HttpStatusCode.valueOf(409));
+            throw new UserAlreadyExistsException("User with Username: "+username+" already exists");
         }
         Authentication authentication=getauthentication();
-        User user=userRepository.findByEmail(authentication.getName());
+        User user=userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
         user.setUsername(username);
         userRepository.save(user);
-        return ResponseEntity.ok().build();
+        return null;
     }
 
     @Override
-    public ResponseEntity<Void> addBlog(Blog blog) {
+    public Void addBlog(Blog blog) {
         Authentication authentication=getauthentication();
-        User user=userRepository.findByEmail(authentication.getName());
+        User user=userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
         user.getBlogs().add(blog);
         userRepository.save(user);
-        return ResponseEntity.ok().build();
+        return null;
     }
 
     @Override
-    public ResponseEntity<Void> deleteUser() {
+    public Void deleteUser() {
         Authentication authentication=getauthentication();
-        User user=userRepository.findByEmail(authentication.getName());
+        User user=userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
         userRepository.delete(user);
-        return ResponseEntity.ok().build();
+        return null;
     }
 
     @Override
     public List<Blog> getMyBlogs() {
         Authentication authentication=getauthentication();
-        User user=userRepository.findByEmail(authentication.getName());
+        User user=userRepository.findByEmail(authentication.getName())
+                .orElseThrow(()->new UserNotFoundException("User not found"));
         return user.getBlogs();
     }
 
     @Override
     public List<Blog> getBlogsByUsername(String username) {
-        User user=userRepository.findByUsername(username);
-        if(user==null){
-            return null;
-        }
+        User user=userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException("User with username "+ username +" not found"));
         return user.getBlogs();
     }
 
     @Override
     public Blog addUserToBlog(Blog blog) {
         Authentication authentication = getauthentication();
-        blog.setUser(userRepository.findByEmail(authentication.getName()));
+        blog.setUser(userRepository.findByEmail(authentication.getName()).get());
         return blog;
     }
 

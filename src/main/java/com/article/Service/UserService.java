@@ -14,13 +14,13 @@ import java.util.List;
 @Service
 public interface UserService {
 
-    ResponseEntity<String> registerUser(RegisterRequest registerRequest);
+    String registerUser(RegisterRequest registerRequest);
 
-    ResponseEntity<Void> updateUserUsername(String username);
+    Void updateUserUsername(String username);
 
-    ResponseEntity<Void> addBlog(Blog blog);
+    Void addBlog(Blog blog);
 
-    ResponseEntity<Void> deleteUser();
+    Void deleteUser();
 
     List<Blog> getMyBlogs();
 
@@ -28,11 +28,11 @@ public interface UserService {
 
     Blog addUserToBlog(Blog blog);
 
-    ResponseEntity<String> loginUser(LoginRequest loginUserRequest);
+    String loginUser(LoginRequest loginUserRequest);
 
     boolean canDelete(Blog blog);
 
-    ResponseEntity<UserResponseDTO> getCurrentUserDetails();
+    UserResponseDTO getCurrentUserDetails();
 
-    ResponseEntity<Void> updateUserDescription(String description);
+    Void updateUserDescription(String description);
 }

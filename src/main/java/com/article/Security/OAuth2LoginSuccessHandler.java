@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -19,6 +20,9 @@ import java.io.IOException;
 @Component
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
+    @Value("${Frontend.URL}")
+    private String frontendUrl;
+
     @Autowired
     private JwtService jwtService;
 
@@ -27,10 +31,10 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         String jwtToken = jwtService.generateToken(authentication);
 
-        response.setContentType("application/json");
-        response.getWriter().write("{\"token\":\"" + jwtToken + "\"}");
+        //response.setContentType("application/json");
+        //response.getWriter().write("{\"token\":\"" + jwtToken + "\"}");
 
         // Swap to this once your frontend is ready:
-        // response.sendRedirect("http://localhost:3000/oauth2/redirect?token=" + jwtToken);
+        response.sendRedirect(frontendUrl + "/oauth2/redirect?token=" + jwtToken);
     }
 }

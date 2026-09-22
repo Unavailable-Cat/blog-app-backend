@@ -3,6 +3,8 @@ package com.article.Service.Implementations;
 import com.article.DTO.BlogRequestDTO;
 import com.article.DTO.BlogResponseDTO;
 import com.article.DTO.DetailedBlogResponseDTO;
+import com.article.Exceptions.BlogNotFoundException;
+import com.article.Exceptions.InvalidImageException;
 import com.article.Mapper.BlogToDTOMapper;
 import com.article.Mapper.DTOtoBlogMapper;
 import com.article.Mapper.ImageToURL;
@@ -38,96 +40,86 @@ public class BlogServiceImpl implements BlogService {
     ImageToURL imageToURL;
 
     @Override
-    public ResponseEntity<List<BlogResponseDTO>> getAllBlogs() {
+    public List<BlogResponseDTO> getAllBlogs() {
         List<Blog> blogs = blogRepository.findAll();
         if(blogs.isEmpty()) {
-            return ResponseEntity.noContent().build();
+            return List.of();
         }
-        return ResponseEntity.ok(blogs.stream().map(BlogToDTOMapper::mapBlogToBlogResponseDTO).toList());
+        return blogs.stream().map(BlogToDTOMapper::mapBlogToBlogResponseDTO).toList();
     }
 
     @Override
-    public ResponseEntity<DetailedBlogResponseDTO> getBlogById(String blogId) {
+    public DetailedBlogResponseDTO getBlogById(String blogId) {
         Optional<Blog> optionalBlog=blogRepository.findById(blogId);
         if(optionalBlog.isEmpty()){
-            return ResponseEntity.notFound().build();
+            throw new BlogNotFoundException("Blog with id: "+blogId+" not found");
         }
         boolean canDelete=userService.canDelete(optionalBlog.get());
-        //System.out.println("user is authenticated?: " + canDelete);
-        return ResponseEntity.ok(BlogToDTOMapper.mapBlogToDetailedBlogResponseDTO(optionalBlog.get(),canDelete));
+        return BlogToDTOMapper.mapBlogToDetailedBlogResponseDTO(optionalBlog.get(),canDelete);
     }
 
     @Override
-    public ResponseEntity<Void> createBlog(BlogRequestDTO blogRequestDTO) {
-        if(!(isValidImage(blogRequestDTO.getImage()))){
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+    public Void createBlog(BlogRequestDTO blogRequestDTO) {
+        isValidImage(blogRequestDTO.getImage());
+
         Blog blog=dtOtoBlogMapper.mapBlogRequestDTOToBlog(blogRequestDTO);
         userService.addUserToBlog(blog);
         blogRepository.save(blog);
         userService.addBlog(blog);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+        return null;
     }
 
     @Override
-    public ResponseEntity<Void> updateBlog(String blogId, BlogRequestDTO blogRequestDTO) {
-        if(!(isValidImage(blogRequestDTO.getImage()))){
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+    public Void updateBlog(String blogId, BlogRequestDTO blogRequestDTO) {
+        isValidImage(blogRequestDTO.getImage());
         Optional<Blog> optionalBlog = blogRepository.findById(blogId);
         if(optionalBlog.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            throw new BlogNotFoundException("Blog with id: "+blogId+" not found");
         }
         Blog blog = dtOtoBlogMapper.mapBlogRequestDTOToBlog(blogRequestDTO);
         blog.setBlogId(blogId);
         blogRepository.save(blog);
-        return ResponseEntity.ok().build();
+        return null;
     }
 
     @Override
-    public ResponseEntity<Void> updateTitle(String id, String title) {
+    public Void updateTitle(String id, String title) {
         Optional<Blog> optionalBlog = blogRepository.findById(id);
         if(optionalBlog.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            throw new BlogNotFoundException("Blog with id: "+id+" not found");
         }
         Blog blog = optionalBlog.get();
         blog.setTitle(title);
         blogRepository.save(blog);
-        return ResponseEntity.ok().build();
+        return null;
     }
 
     @Override
-    public ResponseEntity<Void> updateImage(String id, MultipartFile image) {
-        if(!(isValidImage(image))){
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+    public Void updateImage(String id, MultipartFile image) {
+        isValidImage(image);
         Optional<Blog> optionalBlog = blogRepository.findById(id);
         if(optionalBlog.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            throw new BlogNotFoundException("Blog with id: "+id+" not found");
         }
         Map data = imageToURL.uploadImageToCloudinary(image);
-        // Update the blog with the new image URL
         Blog blog = optionalBlog.get();
         blog.setImageUrl((String) data.get("url"));
         blogRepository.save(blog);
-        return ResponseEntity.ok().build();
+        return null;
     }
 
-    private boolean isValidImage(MultipartFile image) {
+    private Void isValidImage(MultipartFile image) {
         if (image == null || image.isEmpty()) {
-            //throw new IllegalArgumentException("Image is required");
-            return false;
+            throw new InvalidImageException("Image is required");
         }
 
-        // 2. Limit file size
-        long maxSize = 10 * 1024 * 1024; // 5 MB
+
+        long maxSize = 10 * 1024 * 1024; // 10 MB
 
         if (image.getSize() > maxSize) {
-            //throw new IllegalArgumentException("Image must be less than 5 MB");
-            return false;
+            throw new InvalidImageException("Image must be less than 10 MB");
         }
 
-        // 3. Check the declared content type
         String contentType = image.getContentType();
 
         if (contentType == null ||
@@ -136,8 +128,7 @@ public class BlogServiceImpl implements BlogService {
                         contentType.equals("image/png") ||
                         contentType.equals("image/webp"))) {
 
-            //throw new IllegalArgumentException("Only JPG, PNG and WebP images are allowed");
-            return false;
+            throw new InvalidImageException("Only JPG, PNG and WebP images are allowed");
         }
 
         String filename = image.getOriginalFilename();
@@ -148,43 +139,42 @@ public class BlogServiceImpl implements BlogService {
                         filename.toLowerCase().endsWith(".png") ||
                         filename.toLowerCase().endsWith(".webp"))) {
 
-            //throw new IllegalArgumentException("Invalid image format");
-            return false;
+            throw new InvalidImageException("Invalid image format");
         }
-        return true;
+        return null;
     }
 
     @Override
-    public ResponseEntity<Void> updateContent(String id, String content) {
+    public Void updateContent(String id, String content) {
         Optional<Blog> optionalBlog = blogRepository.findById(id);
         if(optionalBlog.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            throw new BlogNotFoundException("Blog with id: "+id+" not found");
         }
         Blog blog = optionalBlog.get();
         blog.setContent(content);
         blogRepository.save(blog);
-        return ResponseEntity.ok().build();
+        return null;
     }
 
     @Override
-    public ResponseEntity<Void> deleteBlog(String blogId) {
+    public Void deleteBlog(String blogId) {
         Optional<Blog> optionalBlog = blogRepository.findById(blogId);
         if(optionalBlog.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            throw new BlogNotFoundException("Blog with id: "+blogId+" not found");
         }
         blogRepository.delete(optionalBlog.get());
-        return ResponseEntity.ok().build();
+        return null;
     }
 
     @Override
-    public ResponseEntity<List<BlogResponseDTO>> getMyBlog() {
+    public List<BlogResponseDTO> getMyBlog() {
         List<Blog> blogs=userService.getMyBlogs();
-        return ResponseEntity.ok(blogs.stream().map(BlogToDTOMapper::mapBlogToBlogResponseDTO).toList());
+        return blogs.stream().map(BlogToDTOMapper::mapBlogToBlogResponseDTO).toList();
     }
 
     @Override
-    public ResponseEntity<List<BlogResponseDTO>> getBlogByUsername(String username) {
+    public List<BlogResponseDTO> getBlogByUsername(String username) {
         List<Blog> blogs = userService.getBlogsByUsername(username);
-        return ResponseEntity.ok(blogs.stream().map(BlogToDTOMapper::mapBlogToBlogResponseDTO).toList());
+        return blogs.stream().map(BlogToDTOMapper::mapBlogToBlogResponseDTO).toList();
     }
 }
