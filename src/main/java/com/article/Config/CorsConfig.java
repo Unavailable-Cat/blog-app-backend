@@ -13,13 +13,14 @@ public class CorsConfig {
     private String frontendUrl;
 
     @Bean
-    public WebMvcConfigurer CorsConfiguration(){
+    public WebMvcConfigurer corsConfiguration() {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry
-                        .addMapping(frontendUrl)
-                        .allowedHeaders("Bearer")
+                        .addMapping("/**")
+                        .allowedOrigins(frontendUrl)
+                        .allowedHeaders("*")
                         .allowedMethods("*");
             }
         };
