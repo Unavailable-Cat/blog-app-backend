@@ -50,6 +50,7 @@ public class JwtServiceImpl implements JwtService {
 
     @Override
     public String generateToken(Authentication authentication) {
+        //System.out.println("jwt called");
         Map<String, Object> claims = new HashMap<>();
         claims.put("role",authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList());
 

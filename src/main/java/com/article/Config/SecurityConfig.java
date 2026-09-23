@@ -55,6 +55,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
+                .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(authorizationManagerRequestMatcherRegistry -> authorizationManagerRequestMatcherRegistry
                         .requestMatchers("/blog/my").authenticated()
                         .requestMatchers(HttpMethod.GET,"/blog").permitAll()
@@ -62,6 +63,7 @@ public class SecurityConfig {
                         .requestMatchers("/register").permitAll()
                         .requestMatchers("/login").permitAll()
                         .requestMatchers("/login/**").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
@@ -74,7 +76,7 @@ public class SecurityConfig {
                 .csrf(csrf->csrf.disable())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement(httpSecuritySessionManagementConfigurer -> httpSecuritySessionManagementConfigurer
-                          .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                          .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
 
                 //.formLogin(Customizer.withDefaults());
                 //.httpBasic(Customizer.withDefaults());

@@ -110,6 +110,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public UserResponseDTO getUserByUsername(String username) {
+        User user=userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException("User with username "+ username +" not found"));
+        return UserToUserResponseDTO.mapUserToUserResponse(user);
+    }
+
+    @Override
     public Void updateUserUsername(String username) {
         if(userRepository.existsByUsername(username)) {
             throw new UserAlreadyExistsException("User with Username: "+username+" already exists");

@@ -35,4 +35,6 @@ public interface UserService {
     UserResponseDTO getCurrentUserDetails();
 
     Void updateUserDescription(String description);
+
+    UserResponseDTO getUserByUsername(String username);
 }

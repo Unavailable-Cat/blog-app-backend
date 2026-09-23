@@ -17,5 +17,6 @@ public class UserResponseDTO {
     String email;
     String username;
     List<Blog> blogs;
+    String description;
     Date createdAt;
 }

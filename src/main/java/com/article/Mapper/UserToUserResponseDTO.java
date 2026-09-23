@@ -10,6 +10,7 @@ public class UserToUserResponseDTO {
                 .email(user.getEmail())
                 .username(user.getUsername())
                 .blogs(user.getBlogs())
+                .description(user.getDescription())
                 .createdAt(user.getCreatedAt())
                 .build();
     }

@@ -36,11 +36,30 @@ public class UserController {
                     )
             )
     })
-    @GetMapping("/user")
+    @GetMapping("/user/my")
     public ResponseEntity<UserResponseDTO> getCurrentUserDetails() {
         return ResponseEntity.ok(userService.getCurrentUserDetails());
     }
 
+    @Operation(summary = "Get user by username")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "User retrieved successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User not found",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            )
+    })
+    @GetMapping("/user/username")
+    public ResponseEntity<UserResponseDTO> getUserByUsername(@RequestParam String username) {
+        return ResponseEntity.ok(userService.getUserByUsername(username));
+    }
 
     @Operation(summary = "Register a user")
     @ApiResponses({

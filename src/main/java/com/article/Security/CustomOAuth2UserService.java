@@ -35,11 +35,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             throw new OAuth2AuthenticationException("Email not available from Google");
         }
 
-        User user = userRepository.findByEmail(email).get();
-
-        if(user == null) {
-            user = createNewOAuthUser(email, name);
-        }
+        User user = userRepository.findByEmail(email).orElseGet(()->createNewOAuthUser(email, name));
 
         return new DefaultOAuth2User(
                 List.of(new SimpleGrantedAuthority(user.getRole().toString())),
